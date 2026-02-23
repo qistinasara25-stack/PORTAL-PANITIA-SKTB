@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="Portal Panitia SKTB", layout="wide")
@@ -7,8 +8,12 @@ st.set_page_config(page_title="Portal Panitia SKTB", layout="wide")
 LOGO_URL = "https://lh3.googleusercontent.com/d/1XV1CIEWhms8jHqJGOKpSluqr7cxtSWrv"
 PENTADBIR_URL = "https://lh3.googleusercontent.com/d/1m87eH4bQ-p51DCMVjvM2ID8QgtwNF9ul"
 
+# URL CSV
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5qSqI95YSC3Jkb_sLRrgHeczkOQJ8_DksqwhwqJdwXVsVhF2lvWnIxBJCV3JevbycF332KqyVhgxf/pub?output=csv"
+
 # --- FUNGSI FIX LINK GOOGLE DRIVE (PENTING!) ---
 def fix_drive_url(url):
+    if not isinstance(url, str): return "#"
     if "drive.google.com" in url:
         try:
             if "/file/d/" in url:
@@ -21,6 +26,19 @@ def fix_drive_url(url):
         except:
             return url
     return url
+
+# --- FUNGSI AMBIL DATA DARI CSV ---
+@st.cache_data
+def load_data():
+    try:
+        df = pd.read_csv(CSV_URL)
+        # Menghasilkan dictionary pautan berdasarkan Nama_Fail
+        links_dict = {row['Nama_Fail']: row['Link_Drive'] for index, row in df.iterrows()}
+        return links_dict
+    except:
+        return {}
+
+data_links = load_data()
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -64,21 +82,18 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
-    /* SIDEBAR STYLE & HOVER EFFECT */
     [data-testid="stSidebar"] { 
         background-color: #fce4ec !important; 
         border-right: 2px solid #f8bbd0; 
     }
     
-    /* Gaya teks asal di sidebar */
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, div[role="radiogroup"] label p {
         color: #000000 !important; 
         font-weight: 800 !important; 
         font-size: 16px !important;
-        transition: all 0.3s ease; /* Kesan transisi yang lembut */
+        transition: all 0.3s ease;
     }
 
-    /* KESAN HOVER PADA NAMA SUBJEK */
     div[role="radiogroup"] label {
         padding: 10px !important;
         border-radius: 10px !important;
@@ -87,13 +102,13 @@ st.markdown("""
     }
 
     div[role="radiogroup"] label:hover {
-        background-color: #f8bbd0 !important; /* Warna pink bila hover */
-        transform: translateX(10px); /* Gerak ke kanan sedikit */
+        background-color: #f8bbd0 !important;
+        transform: translateX(10px);
         cursor: pointer;
     }
 
     div[role="radiogroup"] label:hover p {
-        color: #ad1457 !important; /* Warna teks tukar merah gelap */
+        color: #ad1457 !important;
         font-weight: 900 !important;
         font-size: 17px !important;
     }
@@ -134,42 +149,53 @@ if pilihan == "🏠 LAMAN UTAMA":
 
 # --- 4. LAMAN PANITIA ---
 else:
-    links = {k: "#" for k in ["Carta", "Biodata", "Jadual_M", "Enrolmen", "Kewangan", "Minit", "DSKP", "Manual", "BBM", "RPT", "Akademik", "Gantt", "Laporan", "PLC", "PBD", "Analisis", "Jadual_E", "JSU", "Bank"]}
+    # Memetakan data dari CSV ke dalam struktur pautan yang diperlukan
+    links = {
+        "Carta": data_links.get("Carta Organisasi Panitia", "#"),
+        "Biodata": data_links.get("Biodata & Jadual Waktu Guru", "#"),
+        "Jadual_M": data_links.get("Jadual Pemantauan & Pencerapan", "#"),
+        "Enrolmen": data_links.get("Data Enrolmen Murid", "#"),
+        "Kewangan": data_links.get("Pengurusan Kewangan Panitia (PCG)", "#"),
+        "Minit": data_links.get("Minit Mesyuarat & Surat-Menyurat", "#"),
+        "DSKP": data_links.get("Dokumen Standard Kurikulum (DSKP)", "#"),
+        "Manual": data_links.get("Manual & Modul PdPR", "#"),
+        "BBM": data_links.get("Bahan Bantu Mengajar (BBM) & Rujukan", "#"),
+        "RPT": data_links.get("Perancangan Pengajaran Tahunan & Harian", "#"),
+        "Akademik": data_links.get("Program Peningkatan Akademik", "#"),
+        "Gantt": data_links.get("Carta Gantt Perancangan", "#"),
+        "Laporan": data_links.get("Laporan Program Panitia", "#"),
+        "PLC": data_links.get("Program Perkembangan Staf (LDP/PLC)", "#"),
+        "PBD": data_links.get("Pelaporan PBD & UASA", "#"),
+        "Analisis": data_links.get("Analisis Peperiksaan Awam", "#"),
+        "Jadual_E": data_links.get("Jadual Peperiksaan & Penggubal Soalan", "#"),
+        "JSU": data_links.get("Analisis Item & JSU", "#"),
+        "Bank": data_links.get("Bank Soalan & Skema Permarkahan", "#")
+    }
+    
     KP_IMAGE_URL = None
-
+    # Logic untuk imej Ketua Panitia kekal seperti asal
     if pilihan == "REKA BENTUK DAN TEKNOLOGI":
-        raw_url_rbt = "https://drive.google.com/file/d/11avGiH5w__vXztmo0sjltE46kYgCnNuN/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_rbt)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/11avGiH5w__vXztmo0sjltE46kYgCnNuN/view?usp=sharing")
     elif pilihan == "BAHASA MELAYU":
-        raw_url_bm = "https://drive.google.com/file/d/1dysRv55eRjKnGA3ACWUaJvfZXU6GMajL/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_bm)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1dysRv55eRjKnGA3ACWUaJvfZXU6GMajL/view?usp=sharing")
     elif pilihan == "BAHASA INGGERIS":
-        raw_url_bi = "https://drive.google.com/file/d/1OSPkh5undB9H1PVTWNVPAzEk3DnFXuj2/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_bi)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1OSPkh5undB9H1PVTWNVPAzEk3DnFXuj2/view?usp=sharing")
     elif pilihan == "MATEMATIK":
-        raw_url_mt = "https://drive.google.com/file/d/1edxg1ICltkj3mLqYrpSsdlxl1ZbyP8nC/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_mt)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1edxg1ICltkj3mLqYrpSsdlxl1ZbyP8nC/view?usp=sharing")
     elif pilihan == "SAINS":
-        raw_url_sn = "https://drive.google.com/file/d/1g8cmxSC8Ibcq2bTHaULHzi4lF_ovgQT_/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_sn)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1g8cmxSC8Ibcq2bTHaULHzi4lF_ovgQT_/view?usp=sharing")
     elif pilihan == "PENDIDIKAN ISLAM":
-        raw_url_pi = "https://drive.google.com/file/d/1ghBqi3co12tnWAaJtEpcD_1Spa7vdiUk/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_pi)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1ghBqi3co12tnWAaJtEpcD_1Spa7vdiUk/view?usp=sharing")
     elif pilihan == "SEJARAH":
-        raw_url_sj = "https://drive.google.com/file/d/1pFUbxnxTHe8mOMqYKjTanIT4mmHKIJlj/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_sj)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1pFUbxnxTHe8mOMqYKjTanIT4mmHKIJlj/view?usp=sharing")
     elif pilihan == "PENDIDIKAN JASMANI DAN KESIHATAN":
-        raw_url_pjk = "https://drive.google.com/file/d/1OMLU8ZlT2EPePvpetyorgE7j0XQNHhuH/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_pjk)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1OMLU8ZlT2EPePvpetyorgE7j0XQNHhuH/view?usp=sharing")
     elif pilihan == "PENDIDIKAN SENI VISUAL":
-        raw_url_psv = "https://drive.google.com/file/d/13AiJ6tAqcCrljA3RKj8HcMeV2mjjMZZX/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_psv)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/13AiJ6tAqcCrljA3RKj8HcMeV2mjjMZZX/view?usp=sharing")
     elif pilihan == "PENDIDIKAN MUZIK":
-        raw_url_muzik = "https://drive.google.com/file/d/1fXrKM-QEjA8CqFIEtnz9ESx88HzMBqpe/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_muzik)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1fXrKM-QEjA8CqFIEtnz9ESx88HzMBqpe/view?usp=sharing")
     elif pilihan == "BAHASA ARAB":
-        raw_url_ba = "https://drive.google.com/file/d/1z2JnCTdprivWuohsfIzvgo7WTvsmrRa5/view?usp=sharing"
-        KP_IMAGE_URL = fix_drive_url(raw_url_ba)
+        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1z2JnCTdprivWuohsfIzvgo7WTvsmrRa5/view?usp=sharing")
 
     st.markdown(f'<div style="text-align:center; color:black; font-family:Pacifico; font-size:30px; margin-bottom:10px;">📂 Portal Fail Digital Pengurusan Panitia</div>', unsafe_allow_html=True)
     
