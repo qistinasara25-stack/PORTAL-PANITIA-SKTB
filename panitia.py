@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# 1. KONFIGURASI HALAMAN (ASAL)
+# 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="Portal Panitia SKTB", layout="wide")
 
 # LINK GAMBAR ASAL
@@ -11,20 +11,19 @@ PENTADBIR_URL = "https://lh3.googleusercontent.com/d/1m87eH4bQ-p51DCMVjvM2ID8Qgt
 # URL CSV ANDA
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5qSqI95YSC3Jkb_sLRrgHeczkOQJ8_DksqwhwqJdwXVsVhF2lvWnIxBJCV3JevbycF332KqyVhgxf/pub?output=csv"
 
-# --- FUNGSI AMBIL DATA DARI CSV (LOGIK BARU) ---
+# --- FUNGSI AMBIL DATA DARI CSV ---
 @st.cache_data(ttl=60)
 def load_data():
     try:
         df = pd.read_csv(CSV_URL)
         df.columns = df.columns.str.strip()
-        # Mapping Nama_Fail kepada Link_Drive
         return pd.Series(df.Link_Drive.values, index=df.Nama_Fail).to_dict()
     except:
         return {}
 
 data_links = load_data()
 
-# --- FUNGSI FIX LINK GOOGLE DRIVE (ASAL) ---
+# --- FUNGSI FIX LINK GOOGLE DRIVE ---
 def fix_drive_url(url):
     if not isinstance(url, str): return url
     if "drive.google.com" in url:
@@ -40,7 +39,7 @@ def fix_drive_url(url):
             return url
     return url
 
-# --- CUSTOM CSS (KEKAL 100% ASAL) ---
+# --- CUSTOM CSS (KEKAL ASAL DENGAN UPDATE WARNA BULATAN) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
@@ -77,7 +76,7 @@ st.markdown("""
         height: 180px;
         border-radius: 50%;
         border: 6px solid #ad1457;
-        background-color: #fce4ec; 
+        background-color: #FCE4EC; /* WARNA YANG DIMINTA */
         object-fit: cover;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
@@ -106,7 +105,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. MENU SIDEBAR (ASAL)
+# 2. MENU SIDEBAR
 with st.sidebar:
     st.image(LOGO_URL, width=100)
     st.markdown("<h2 style='text-align: center; color: black; margin-top: 0;'>🌸 MENU SKTB</h2>", unsafe_allow_html=True)
@@ -115,13 +114,12 @@ with st.sidebar:
         ["🏠 LAMAN UTAMA", "REKA BENTUK DAN TEKNOLOGI", "BAHASA MELAYU", "BAHASA INGGERIS", "MATEMATIK", "SAINS", "PENDIDIKAN ISLAM", "SEJARAH", "PENDIDIKAN JASMANI DAN KESIHATAN", "PENDIDIKAN SENI VISUAL", "PENDIDIKAN MUZIK", "BAHASA ARAB"]
     )
 
-# FUNGSI UNTUK AMBIL LINK (Mencegah "Patah Balik")
 def get_link(nama_fail):
     link = data_links.get(nama_fail, "#")
-    if "http" not in str(link): return "#" # Jika belum isi di sheet, jangan refresh
+    if "http" not in str(link): return "#"
     return link
 
-# --- 3. LAMAN UTAMA (ASAL) ---
+# --- 3. LAMAN UTAMA ---
 if pilihan == "🏠 LAMAN UTAMA":
     st.markdown(f"""
         <div class="super-center">
@@ -133,15 +131,21 @@ if pilihan == "🏠 LAMAN UTAMA":
         </div>
     """, unsafe_allow_html=True)
 
-# --- 4. LAMAN PANITIA (ASAL DENGAN DATA CSV) ---
+# --- 4. LAMAN PANITIA ---
 else:
     KP_IMAGE_URL = None
-    # Logik Imej Ketua Panitia (Kekal Asal)
-    if pilihan == "REKA BENTUK DAN TEKNOLOGI":
-        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/11avGiH5w__vXztmo0sjltE46kYgCnNuN/view?usp=sharing")
-    elif pilihan == "BAHASA MELAYU":
-        KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1dysRv55eRjKnGA3ACWUaJvfZXU6GMajL/view?usp=sharing")
-    # ... Tambah yang lain jika perlu ...
+    # Logik imej Ketua Panitia kekal mengikut pilihan
+    if pilihan == "REKA BENTUK DAN TEKNOLOGI": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/11avGiH5w__vXztmo0sjltE46kYgCnNuN/view?usp=sharing")
+    elif pilihan == "BAHASA MELAYU": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1dysRv55eRjKnGA3ACWUaJvfZXU6GMajL/view?usp=sharing")
+    elif pilihan == "BAHASA INGGERIS": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1OSPkh5undB9H1PVTWNVPAzEk3DnFXuj2/view?usp=sharing")
+    elif pilihan == "MATEMATIK": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1edxg1ICltkj3mLqYrpSsdlxl1ZbyP8nC/view?usp=sharing")
+    elif pilihan == "SAINS": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1g8cmxSC8Ibcq2bTHaULHzi4lF_ovgQT_/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN ISLAM": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1ghBqi3co12tnWAaJtEpcD_1Spa7vdiUk/view?usp=sharing")
+    elif pilihan == "SEJARAH": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1pFUbxnxTHe8mOMqYKjTanIT4mmHKIJlj/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN JASMANI DAN KESIHATAN": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1OMLU8ZlT2EPePvpetyorgE7j0XQNHhuH/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN SENI VISUAL": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/13AiJ6tAqcCrljA3RKj8HcMeV2mjjMZZX/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN MUZIK": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1fXrKM-QEjA8CqFIEtnz9ESx88HzMBqpe/view?usp=sharing")
+    elif pilihan == "BAHASA ARAB": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1z2JnCTdprivWuohsfIzvgo7WTvsmrRa5/view?usp=sharing")
 
     st.markdown(f'<div style="text-align:center; color:black; font-family:Pacifico; font-size:30px; margin-bottom:10px;">📂 Portal Fail Digital Pengurusan Panitia</div>', unsafe_allow_html=True)
     
