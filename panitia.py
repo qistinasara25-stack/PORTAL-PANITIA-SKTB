@@ -4,17 +4,28 @@ import pandas as pd
 # 1. KONFIGURASI HALAMAN
 st.set_page_config(page_title="Portal Panitia SKTB", layout="wide")
 
-# LINK CSV DARI GOOGLE SHEETS
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5qSqI95YSC3Jkb_sLRrgHeczkOQJ8_DksqwhwqJdwXVsVhF2lvWnIxBJCV3JevbycF332KqyVhgxf/pub?output=csv"
-
-# LINK GAMBAR ASAL (LOGO & PENTADBIR)
+# LINK GAMBAR ASAL
 LOGO_URL = "https://lh3.googleusercontent.com/d/1XV1CIEWhms8jHqJGOKpSluqr7cxtSWrv"
 PENTADBIR_URL = "https://lh3.googleusercontent.com/d/1m87eH4bQ-p51DCMVjvM2ID8QgtwNF9ul"
 
-# --- FUNGSI FIX LINK GOOGLE DRIVE (PENTING!) ---
+# URL CSV ANDA
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS5qSqI95YSC3Jkb_sLRrgHeczkOQJ8_DksqwhwqJdwXVsVhF2lvWnIxBJCV3JevbycF332KqyVhgxf/pub?output=csv"
+
+# --- FUNGSI AMBIL DATA DARI CSV ---
+@st.cache_data(ttl=60)
+def load_data():
+    try:
+        df = pd.read_csv(CSV_URL)
+        df.columns = df.columns.str.strip()
+        return pd.Series(df.Link_Drive.values, index=df.Nama_Fail).to_dict()
+    except:
+        return {}
+
+data_links = load_data()
+
+# --- FUNGSI FIX LINK GOOGLE DRIVE ---
 def fix_drive_url(url):
-    if not isinstance(url, str):
-        return None
+    if not isinstance(url, str): return url
     if "drive.google.com" in url:
         try:
             if "/file/d/" in url:
@@ -27,18 +38,6 @@ def fix_drive_url(url):
         except:
             return url
     return url
-
-# --- FUNGSI MUAT TURUN DATA ---
-@st.cache_data
-def load_data():
-    try:
-        df = pd.read_csv(CSV_URL)
-        return df
-    except Exception as e:
-        st.error(f"Gagal memuatkan data: {e}")
-        return None
-
-df_data = load_data()
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -77,21 +76,22 @@ st.markdown("""
         height: 180px;
         border-radius: 50%;
         border: 6px solid #ad1457;
-        background-color: #fce4ec; 
+        background-color: #FCE4EC;
         object-fit: cover;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
 
-    [data-testid="stSidebar"] { 
-        background-color: #fce4ec !important; 
-        border-right: 2px solid #f8bbd0; 
+    /* --- SIDEBAR STYLE & HOVER EFFECT (DARI GAMBAR) --- */
+    [data-testid="stSidebar"] {
+        background-color: #fce4ec !important;
+        border-right: 2px solid #f8bbd0;
     }
-    
+
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, div[role="radiogroup"] label p {
-        color: #000000 !important; 
-        font-weight: 800 !important; 
+        color: #000000 !important;
+        font-weight: 800 !important;
         font-size: 16px !important;
-        transition: all 0.3s ease;
+        transition: all 0.3s ease; /* Kesan transisi yang lembut */
     }
 
     div[role="radiogroup"] label {
@@ -102,17 +102,18 @@ st.markdown("""
     }
 
     div[role="radiogroup"] label:hover {
-        background-color: #f8bbd0 !important; 
-        transform: translateX(10px); 
+        background-color: #f8bbd0 !important; /* Warna pink bila hover */
+        transform: translateX(10px); /* Gerak ke kanan sedikit */
         cursor: pointer;
     }
 
     div[role="radiogroup"] label:hover p {
-        color: #ad1457 !important; 
+        color: #ad1457 !important; /* Warna teks tukar merah gelap */
         font-weight: 900 !important;
         font-size: 17px !important;
     }
 
+    /* --- GAYA CARD & EXPANDER --- */
     .card { border-radius: 20px; padding: 25px; text-align: center; color: #FFFFFF !important; font-weight: bold !important; height: 180px; display: flex; flex-direction: column; justify-content: center; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     .color-a { background: linear-gradient(135deg, #008B8B, #20B2AA); }
     .color-b { background: linear-gradient(135deg, #FF8C00, #FFA500); }
@@ -135,6 +136,11 @@ with st.sidebar:
         ["🏠 LAMAN UTAMA", "REKA BENTUK DAN TEKNOLOGI", "BAHASA MELAYU", "BAHASA INGGERIS", "MATEMATIK", "SAINS", "PENDIDIKAN ISLAM", "SEJARAH", "PENDIDIKAN JASMANI DAN KESIHATAN", "PENDIDIKAN SENI VISUAL", "PENDIDIKAN MUZIK", "BAHASA ARAB"]
     )
 
+def get_link(nama_fail):
+    link = data_links.get(nama_fail, "#")
+    if "http" not in str(link): return "#"
+    return link
+
 # --- 3. LAMAN UTAMA ---
 if pilihan == "🏠 LAMAN UTAMA":
     st.markdown(f"""
@@ -149,36 +155,19 @@ if pilihan == "🏠 LAMAN UTAMA":
 
 # --- 4. LAMAN PANITIA ---
 else:
-    # Ambil data dari CSV berdasarkan pilihan panitia
-    if df_data is not None:
-        row = df_data[df_data['PANITIA'] == pilihan]
-        if not row.empty:
-            links = {
-                "Carta": row.iloc[0]['CARTA'],
-                "Biodata": row.iloc[0]['BIODATA'],
-                "Jadual_M": row.iloc[0]['JADUAL_M'],
-                "Enrolmen": row.iloc[0]['ENROLMEN'],
-                "Kewangan": row.iloc[0]['KEWANGAN'],
-                "Minit": row.iloc[0]['MINIT'],
-                "DSKP": row.iloc[0]['DSKP'],
-                "Manual": row.iloc[0]['MANUAL'],
-                "BBM": row.iloc[0]['BBM'],
-                "RPT": row.iloc[0]['RPT'],
-                "Akademik": row.iloc[0]['AKADEMIK'],
-                "Gantt": row.iloc[0]['GANTT'],
-                "Laporan": row.iloc[0]['LAPORAN'],
-                "PLC": row.iloc[0]['PLC'],
-                "PBD": row.iloc[0]['PBD'],
-                "Analisis": row.iloc[0]['ANALISIS'],
-                "Jadual_E": row.iloc[0]['JADUAL_E'],
-                "JSU": row.iloc[0]['JSU'],
-                "Bank": row.iloc[0]['BANK']
-            }
-            KP_IMAGE_URL = fix_drive_url(row.iloc[0]['GAMBAR_KP'])
-        else:
-            links = {k: "#" for k in ["Carta", "Biodata", "Jadual_M", "Enrolmen", "Kewangan", "Minit", "DSKP", "Manual", "BBM", "RPT", "Akademik", "Gantt", "Laporan", "PLC", "PBD", "Analisis", "Jadual_E", "JSU", "Bank"]}
-            KP_IMAGE_URL = None
-    
+    KP_IMAGE_URL = None
+    if pilihan == "REKA BENTUK DAN TEKNOLOGI": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/11avGiH5w__vXztmo0sjltE46kYgCnNuN/view?usp=sharing")
+    elif pilihan == "BAHASA MELAYU": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1dysRv55eRjKnGA3ACWUaJvfZXU6GMajL/view?usp=sharing")
+    elif pilihan == "BAHASA INGGERIS": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1OSPkh5undB9H1PVTWNVPAzEk3DnFXuj2/view?usp=sharing")
+    elif pilihan == "MATEMATIK": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1edxg1ICltkj3mLqYrpSsdlxl1ZbyP8nC/view?usp=sharing")
+    elif pilihan == "SAINS": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1g8cmxSC8Ibcq2bTHaULHzi4lF_ovgQT_/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN ISLAM": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1ghBqi3co12tnWAaJtEpcD_1Spa7vdiUk/view?usp=sharing")
+    elif pilihan == "SEJARAH": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1pFUbxnxTHe8mOMqYKjTanIT4mmHKIJlj/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN JASMANI DAN KESIHATAN": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1OMLU8ZlT2EPePvpetyorgE7j0XQNHhuH/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN SENI VISUAL": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/13AiJ6tAqcCrljA3RKj8HcMeV2mjjMZZX/view?usp=sharing")
+    elif pilihan == "PENDIDIKAN MUZIK": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1fXrKM-QEjA8CqFIEtnz9ESx88HzMBqpe/view?usp=sharing")
+    elif pilihan == "BAHASA ARAB": KP_IMAGE_URL = fix_drive_url("https://drive.google.com/file/d/1z2JnCTdprivWuohsfIzvgo7WTvsmrRa5/view?usp=sharing")
+
     st.markdown(f'<div style="text-align:center; color:black; font-family:Pacifico; font-size:30px; margin-bottom:10px;">📂 Portal Fail Digital Pengurusan Panitia</div>', unsafe_allow_html=True)
     
     h_col1, h_col2 = st.columns([1.5, 3.5])
@@ -194,37 +183,37 @@ else:
     with col1:
         st.markdown('<div class="card color-a"><div class="fail-title">🔵 FAIL A</div>MAKLUMAT PANITIA</div>', unsafe_allow_html=True)
         with st.expander("FAIL A 👇"):
-            st.markdown(f'<a class="sublink" href="{links["Carta"]}" target="_blank">👤 Carta Organisasi</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Biodata"]}" target="_blank">📋 Biodata & Jadual Guru</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Jadual_M"]}" target="_blank">📅 Jadual Pemantauan</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Enrolmen"]}" target="_blank">👥 Data Enrolmen</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Kewangan"]}" target="_blank">💰 Pengurusan Kewangan</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Carta Organisasi Panitia")}" target="_blank">👤 Carta Organisasi</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Biodata & Jadual Waktu Guru")}" target="_blank">📋 Biodata & Jadual Guru</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Jadual Pemantauan & Pencerapan")}" target="_blank">📅 Jadual Pemantauan</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Data Enrolmen Murid")}" target="_blank">👥 Data Enrolmen</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Pengurusan Kewangan Panitia (PCG)")}" target="_blank">💰 Pengurusan Kewangan</a>', unsafe_allow_html=True)
     
     with col2:
         st.markdown('<div class="card color-b"><div class="fail-title">🟠 FAIL B</div>KURIKULUM</div>', unsafe_allow_html=True)
         with st.expander("FAIL B 👇"):
-            st.markdown(f'<a class="sublink" href="{links["Minit"]}" target="_blank">📖 Minit Mesyuarat</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["DSKP"]}" target="_blank">📜 DSKP</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Manual"]}" target="_blank">📘 Manual & Modul</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["BBM"]}" target="_blank">📦 BBM</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Minit Mesyuarat & Surat-Menyurat")}" target="_blank">📖 Minit Mesyuarat</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Dokumen Standard Kurikulum (DSKP)")}" target="_blank">📜 DSKP</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Manual & Modul PdPR")}" target="_blank">📘 Manual & Modul</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Bahan Bantu Mengajar (BBM) & Rujukan")}" target="_blank">📦 BBM</a>', unsafe_allow_html=True)
 
     with col3:
         st.markdown('<div class="card color-c"><div class="fail-title">🟣 FAIL C</div>PERANCANGAN</div>', unsafe_allow_html=True)
         with st.expander("FAIL C 👇"):
-            st.markdown(f'<a class="sublink" href="{links["RPT"]}" target="_blank">📅 RPT & RPH</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Akademik"]}" target="_blank">🏆 Peningkatan Akademik</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Gantt"]}" target="_blank">📊 Carta Gantt</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Laporan"]}" target="_blank">📝 Laporan Program</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["PLC"]}" target="_blank">🤝 LDP / PLC</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Perancangan Pengajaran Tahunan & Harian")}" target="_blank">📅 RPT & RPH</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Program Peningkatan Akademik")}" target="_blank">🏆 Peningkatan Akademik</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Carta Gantt Perancangan")}" target="_blank">📊 Carta Gantt</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Laporan Program Panitia")}" target="_blank">📝 Laporan Program</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Program Perkembangan Staf (LDP/PLC)")}" target="_blank">🤝 LDP / PLC</a>', unsafe_allow_html=True)
 
     with col4:
         st.markdown('<div class="card color-d"><div class="fail-title">🟢 FAIL D</div>PEPERIKSAAN</div>', unsafe_allow_html=True)
         with st.expander("FAIL D 👇"):
-            st.markdown(f'<a class="sublink" href="{links["PBD"]}" target="_blank">📊 Pelaporan PBD & UASA</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Analisis"]}" target="_blank">📈 Analisis Peperiksaan Awam</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Jadual_E"]}" target="_blank">🕒 Jadual & Penggubal</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["JSU"]}" target="_blank">📑 Analisis Item & JSU</a>', unsafe_allow_html=True)
-            st.markdown(f'<a class="sublink" href="{links["Bank"]}" target="_blank">🏦 Bank Soalan</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Pelaporan PBD & UASA")}" target="_blank">📊 Pelaporan PBD & UASA</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Analisis Peperiksaan Awam")}" target="_blank">📈 Analisis Peperiksaan Awam</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Jadual Peperiksaan & Penggubal Soalan")}" target="_blank">🕒 Jadual & Penggubal</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Analisis Item & JSU")}" target="_blank">📑 Analisis Item & JSU</a>', unsafe_allow_html=True)
+            st.markdown(f'<a class="sublink" href="{get_link("Bank Soalan & Skema Permarkahan")}" target="_blank">🏦 Bank Soalan</a>', unsafe_allow_html=True)
 
     st.divider()
     st.markdown(f'<p style="text-align: center; color: black; font-weight: bold;">Portal Panitia {pilihan} - SEK. KEB. TELOK BEREMBANG 2026</p>', unsafe_allow_html=True)
